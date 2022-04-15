@@ -11,6 +11,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 # 头文件的搜索路径
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(/usr/include/mysql)
 # link_directories(/usr/lib/mysql)
 
 # 加载子目录

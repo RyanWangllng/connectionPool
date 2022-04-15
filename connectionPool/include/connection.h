@@ -24,5 +24,5 @@ public:
     // 查询操作 select
     MYSQL_RES* query(std::string sql);
 private:
-    MYSQL *_conn; // MySQL的一条连接
+    MYSQL _conn; // MySQL的一条连接
 };

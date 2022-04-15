@@ -3,6 +3,8 @@ aux_source_directory(. SRC_LIST)
 
 add_definitions(-std=c++11)
 
+link_libraries(mysqlclient)
+
 # 指定生成可执行文件
 add_executable(MySQLconnection ${SRC_LIST})
 
