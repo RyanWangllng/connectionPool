@@ -24,7 +24,7 @@ cd connectionPool/connectionPool/bin
 4. 池中的连接空闲时间超过maxIdleTime就会被释放掉，只保留初始时候的连接个数
 5. 设置连接超时，请求回去连接超过该时间就提示连接失败
 #### 压力测试：
-> 测试环境：Ubuntu 20.04 LTS、MySQL 8.0.28
+> 测试环境：Ubuntu 20.04 LTS、MySQL 8.0.28  
 配置：腾讯云轻量应用服务器 2核 4G
 
 |数据量|单线程使用连接池提升|四线程使用连接池提升|
