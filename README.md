@@ -4,7 +4,7 @@
 - C++11、多线程、智能指针
 - 线程安全单例模式
 - 生产者-消费者模型
-#### 克隆编译：
+#### 编译：
 ```Bash
 git clone git@github.com:RyanWangllng/connectionPool.git
 
