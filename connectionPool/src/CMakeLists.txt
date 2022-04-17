@@ -9,4 +9,4 @@ link_libraries(mysqlclient)
 add_executable(MySQLconnection ${SRC_LIST})
 
 # 指定可执行文件链接时需要依赖的库文件
-target_link_libraries(MySQLconnection mysqlclient)
+target_link_libraries(MySQLconnection mysqlclient pthread)

@@ -19,7 +19,7 @@ bool Connection::connect(std::string ip, unsigned short port, std::string user, 
     // 连接数据库
     MYSQL *p = mysql_real_connect(&_conn, ip.c_str(), user.c_str(), password.c_str(), dbname.c_str(), port, nullptr, 0);
     if (p != nullptr) {
-        LOG("CONNECT SUCCESS!");
+        // LOG("CONNECT SUCCESS!");
         return true;
     } else {
         LOG(mysql_error(p)); // 连接不成功时打印信息
