@@ -25,6 +25,8 @@ public:
 private:
     // 私有化构造函数
     ConnectionPool(); 
+    // 析构函数
+    ~ConnectionPool();
     // 从配置文件中加载配置项
     bool loadConfigFile(); 
     // 运行在独立的线程中，专门生产新连接
@@ -47,4 +49,8 @@ private:
     std::mutex _queueMutex; // 维护连接队列的线程安全互斥锁
     std::atomic_int _connectionCnt; // 记录连接所创建的connection连接的总数量
     std::condition_variable cv; // 设置条件变量，用于连接生产线程和连接消费线程的通信
+    std::condition_variable _cv_close;
+    bool _pool_alive;
+    int _use_count;
+    bool _is_closing;
 };

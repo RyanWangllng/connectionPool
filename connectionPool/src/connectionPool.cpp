@@ -49,11 +49,12 @@ bool ConnectionPool::loadConfigFile() {
             _connectionTimeout = atoi(value.c_str());
         }
     }
+    fclose(pf);
     return true;
 }
 
 // 第一次获取单例实例时，调用一下构造函数
-ConnectionPool::ConnectionPool() {
+ConnectionPool::ConnectionPool() : _pool_alive(true) {
     // 加载配置项
     if (!loadConfigFile()) return;
 
@@ -75,14 +76,32 @@ ConnectionPool::ConnectionPool() {
     scanner.detach();
 }
 
+ConnectionPool::~ConnectionPool() {
+    {
+        std::unique_lock<std::mutex> lock(_queueMutex);
+        _is_closing = true;
+        _cv_close.wait(lock, [this]() {
+            return _use_count = 0;
+        });
+        while (!_connectionQue.empty())
+		{
+			Connection *p = _connectionQue.front();
+			_connectionQue.pop();
+			delete p;
+		}
+		_pool_alive = false;
+    }
+    cv.notify_all();
+}
+
 // 运行在独立的线程中，专门生产新连接
 void ConnectionPool::produceConnectionTask() {
     for (;;) {
         std::unique_lock<std::mutex> ulock(_queueMutex);
-        while (!_connectionQue.empty()) {
-            cv.wait(ulock); // 队列不空，生产线程等待，不用生产
-        }
-
+        cv.wait(ulock, [this](){
+            return !this->_pool_alive || this->_connectionQue.empty();
+        });
+        if (!_pool_alive) break;
         // 连接数量没有到达上线，继续创建
         if (_connectionCnt < _maxSize) {
             Connection *p = new Connection;
@@ -115,9 +134,14 @@ std::shared_ptr<Connection> ConnectionPool::getConnection() {
             std::unique_lock<std::mutex> ulock(_queueMutex);
             pconn->updateAliveTime(); // 更新开始空闲的起始时间
             _connectionQue.push(pconn);
+            --_use_count;
+            if (_is_closing && _use_count == 0) {
+                _cv_close.notify_all();
+            }
         });
 
     _connectionQue.pop();
+    ++_use_count;
     cv.notify_all(); // 通知生产者线程检查一下队列是否空了，空了就要继续生产
 
     return sptr;
@@ -131,13 +155,16 @@ void ConnectionPool::scannerConnectionTask() {
 
         // 扫描整个队列，释放多余的连接
         std::unique_lock<std::mutex> ulock(_queueMutex);
-        if (_connectionCnt > _initSzie) {
+        while (_connectionCnt > _initSzie && _pool_alive) {
             Connection *p = _connectionQue.front();
-            if (p->getAliveTime() >= (_maxIdleTime * 1000)) {
-                _connectionQue.pop();
-                delete p; // 释放连接
-            } else {
-                break; // 队头都没有超过，其他肯定没有
+            if (p->getAliveTime() >= (_maxIdleTime * 100)) {
+                if (p->getAliveTime() >= (_maxIdleTime * 1000)) {
+                    _connectionQue.pop();
+                    --_connectionCnt;
+                    delete p; // 释放连接
+                } else {
+                    break; // 队头都没有超过，其他肯定没有
+                }
             }
         }
     }
